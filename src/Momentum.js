@@ -1658,6 +1658,15 @@ export default function Momentum() {
     );
   }
 
+  // Sync body/html background with theme to prevent white flash on overscroll
+  useEffect(() => {
+    const bg = theme === "dark" ? "#0A0A0B" : "#FAFAFA";
+    document.documentElement.style.background = bg;
+    document.body.style.background = bg;
+    document.getElementById("root").style.background = bg;
+    document.querySelector('meta[name="theme-color"]')?.setAttribute("content", bg);
+  }, [theme]);
+
   return (
     <div style={{
       minHeight: "100vh",
