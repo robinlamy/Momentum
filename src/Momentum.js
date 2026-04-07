@@ -1546,6 +1546,82 @@ function SettingsTab({ theme, setTheme, settings, setSettings, weekPlan }) {
           Download .ics File
         </button>
       </div>
+
+      {/* Data Backup */}
+      <div style={{
+        padding: "18px", borderRadius: "14px", marginTop: "14px",
+        background: theme === "dark" ? "#1E1E22" : "#F7F7F8",
+        border: `1px solid ${theme === "dark" ? "#2A2A2E" : "#E5E5E8"}`
+      }}>
+        <div style={{ fontSize: "14px", fontWeight: "600", color: theme === "dark" ? "#FFF" : "#111", fontFamily: "'DM Sans', sans-serif", marginBottom: "8px" }}>
+          Data Backup
+        </div>
+        <div style={{ fontSize: "12px", color: theme === "dark" ? "#6B6B76" : "#999", fontFamily: "'DM Sans', sans-serif", marginBottom: "14px" }}>
+          Export all your data as a backup file, or restore from a previous backup. Do this regularly to avoid losing your progress.
+        </div>
+        <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+          <button onClick={() => {
+            const backup = {};
+            Object.values(STORAGE_KEYS).forEach(key => {
+              try {
+                const val = localStorage.getItem(key);
+                if (val) backup[key] = JSON.parse(val);
+              } catch (e) {}
+            });
+            backup._exportDate = new Date().toISOString();
+            backup._version = "1.0";
+            const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `momentum-backup-${new Date().toISOString().slice(0, 10)}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+          }} style={{
+            padding: "10px 20px", borderRadius: "8px", border: "none", cursor: "pointer",
+            background: "#10B981", color: "#FFF", fontSize: "13px", fontWeight: "600",
+            fontFamily: "'DM Sans', sans-serif"
+          }}>
+            Export Backup
+          </button>
+          <label style={{
+            padding: "10px 20px", borderRadius: "8px", cursor: "pointer",
+            background: theme === "dark" ? "#2A2A2E" : "#E5E5E8",
+            color: theme === "dark" ? "#FFF" : "#111",
+            fontSize: "13px", fontWeight: "600",
+            fontFamily: "'DM Sans', sans-serif",
+            display: "inline-flex", alignItems: "center"
+          }}>
+            Import Backup
+            <input type="file" accept=".json" style={{ display: "none" }} onChange={(e) => {
+              const file = e.target.files[0];
+              if (!file) return;
+              const reader = new FileReader();
+              reader.onload = (ev) => {
+                try {
+                  const data = JSON.parse(ev.target.result);
+                  if (!data._version) {
+                    alert("Invalid backup file.");
+                    return;
+                  }
+                  const confirmed = window.confirm("This will replace ALL your current data with the backup. Are you sure?");
+                  if (!confirmed) return;
+                  Object.values(STORAGE_KEYS).forEach(key => {
+                    if (data[key] !== undefined) {
+                      localStorage.setItem(key, JSON.stringify(data[key]));
+                    }
+                  });
+                  window.location.reload();
+                } catch (err) {
+                  alert("Error reading backup file. Make sure it's a valid Momentum backup.");
+                }
+              };
+              reader.readAsText(file);
+              e.target.value = "";
+            }} />
+          </label>
+        </div>
+      </div>
     </div>
   );
 }
